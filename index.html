@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>১০০+ ফ্রি এআই ভয়েস জেনারেটর & ডাউনলোডার</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+    }
+    h2 { margin-top: 0; color: #2c3e50; text-align: center; font-size: 22px; }
+    textarea {
+      width: 100%; height: 120px; padding: 10px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 15px; box-sizing: border-box; resize: vertical;
+    }
+    .form-group { margin-top: 15px; }
+    label { font-weight: bold; font-size: 14px; color: #555; }
+    select, button {
+      width: 100%; padding: 12px; margin-top: 5px;
+      border-radius: 6px; border: 1px solid #ccc; font-size: 15px;
+    }
+    button {
+      background: #27ae60; color: white; border: none;
+      font-weight: bold; cursor: pointer; margin-top: 15px;
+      transition: 0.3s;
+    }
+    button:hover { background: #219150; }
+    button:disabled { background: #95a5a6; cursor: not-allowed; }
+    audio { width: 100%; margin-top: 20px; }
+    .download-btn {
+      display: none; text-align: center; background: #2980b9;
+      color: white; text-decoration: none; padding: 12px;
+      border-radius: 6px; margin-top: 10px; font-weight: bold;
+    }
+    .download-btn:hover { background: #1f6391; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>AI ভয়েস জেনারেটর & ডাউনলোডার</h2>
+    
+    <textarea id="text" placeholder="এখানে আপনার লেখাটি লিখুন..."></textarea>
+
+    <div class="form-group">
+      <label>এআই ভয়েস মডেল নির্বাচন করুন (১০০+ ভয়েস):</label>
+      <select id="voice-select">
+        <option value="">ভয়েস লোড হচ্ছে...</option>
+      </select>
+    </div>
+
+    <button id="generate-btn" onclick="generateAudio()">অডিও তৈরি করুন</button>
+
+    <audio id="audio-player" controls style="display:none;"></audio>
+    <a id="download-link" class="download-btn" download="ai-voice.mp3">MP3 ডাউনলোড করুন</a>
+  </div>
+
+  <script>
+    // এখানে আপনার Render থেকে পাওয়া URL টি বসাতে হবে (ধাপ ৩-এ বলা আছে)
+    const API_URL = "https://YOUR-RENDER-URL.onrender.com"; 
+
+    // ব্যাকএন্ড থেকে ভয়েস লোড করা
+    async function loadVoices() {
+      try {
+        const res = await fetch(`${API_URL}/voices`);
+        const voices = await res.json();
+        const select = document.getElementById('voice-select');
+        select.innerHTML = '';
+
+        voices.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.ShortName;
+          opt.textContent = `${v.FriendlyName} (${v.Locale})`;
+          
+          if (v.Locale.includes('bn-BD')) opt.selected = true;
+          
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        alert("ভয়েস তালিকা লোড করতে সমস্যা হয়েছে।");
+      }
+    }
+
+    // অডিও জেনারেট করা ও ডাউনলোডের ব্যবস্থা করা
+    async function generateAudio() {
+      const text = document.getElementById('text').value;
+      const voice = document.getElementById('voice-select').value;
+      const btn = document.getElementById('generate-btn');
+      const audioPlayer = document.getElementById('audio-player');
+      const downloadLink = document.getElementById('download-link');
+
+      if (!text.trim()) {
+        alert("অনুগ্রহ করে কিছু লিখুন");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "অডিও তৈরি হচ্ছে...";
+
+      try {
+        const response = await fetch(`${API_URL}/generate-tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice })
+        });
+
+        if (!response.ok) throw new Error("অডিও তৈরি করা সম্ভব হয়নি");
+
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+
+        audioPlayer.src = audioUrl;
+        audioPlayer.style.display = "block";
+        audioPlayer.play();
+
+        downloadLink.href = audioUrl;
+        downloadLink.style.display = "block";
+
+      } catch (err) {
+        alert("ত্রুটি: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "অডিও তৈরি করুন";
+      }
+    }
+
+    loadVoices();
+  </script>
+</body>
+</html>
